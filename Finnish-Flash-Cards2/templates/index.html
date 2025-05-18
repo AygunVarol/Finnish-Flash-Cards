@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Finnish Flashcards</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+    body {
+        background: #f3f6fa;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        color: #333;
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+    }
+    .container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        max-width: 420px;
+        margin: 40px auto 0;
+        background: #fff;
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(80,100,120,0.10), 0 1.5px 6px rgba(0,0,0,0.03);
+        padding: 32px 24px 24px 24px;
+    }
+    h2 {
+        margin-bottom: 16px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        color: #2d70c7;
+    }
+    #theme-select {
+        width: 100%;
+        margin-bottom: 18px;
+    }
+    #theme {
+        padding: 8px 12px;
+        font-size: 1.1em;
+        border-radius: 10px;
+        border: 1px solid #c1d7ee;
+        margin-left: 10px;
+        background: #f0f6ff;
+    }
+    .btn, button {
+        background: #3774e0;
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 11px 18px;
+        font-size: 1.09em;
+        cursor: pointer;
+        margin: 4px 6px;
+        transition: background 0.14s;
+        box-shadow: 0 1px 4px rgba(40,90,160,0.04);
+    }
+    .btn:active, button:active { background: #2455aa; }
+    .btn[disabled], button[disabled] { opacity: 0.5; pointer-events: none; }
+    #stats {
+        margin: 18px 0 10px 0;
+        font-size: 1.1em;
+        letter-spacing: 0.5px;
+    }
+    .progressbar {
+        width: 100%;
+        height: 8px;
+        background: #e5eaf2;
+        border-radius: 7px;
+        overflow: hidden;
+        margin: 8px 0 14px 0;
+    }
+    .progressbar-fill {
+        background: linear-gradient(90deg, #3795fa, #3774e0);
+        height: 100%;
+        transition: width 0.3s cubic-bezier(.61,.18,.61,1.21);
+        width: 0;
+    }
+    #flashcard {
+        width: 95%;
+        min-height: 90px;
+        background: #f7fbff;
+        border-radius: 18px;
+        box-shadow: 0 1px 12px rgba(80,100,120,0.07);
+        margin: 20px 0 12px 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 2em;
+        font-weight: 500;
+        padding: 30px 16px;
+        cursor: pointer;
+        user-select: none;
+        letter-spacing: 0.5px;
+        position: relative;
+        transition: font-size 0.2s;
+    }
+    #flashcard.flipped {
+        background: #f0f9f9;
+    }
+    .answer-phrase {
+        color: #3774e0;
+        font-size: 1.15em;
+        margin-top: 13px;
+        font-weight: 400;
+        opacity: 0.96;
+    }
+    #answer-btns {
+        margin-bottom: 18px;
+    }
+    .btn-small {
+        padding: 8px 11px;
+        font-size: 1em;
+        background: #ecf4fb;
+        color: #2771d3;
+        border-radius: 8px;
+        margin: 0 4px;
+        border: none;
+    }
+    .btn-small:active { background: #d5eaff; }
+    .font-controls {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 10px;
+    }
+    #session-end {
+        padding: 30px 0;
+        text-align: center;
+        font-size: 1.15em;
+    }
+    .hidden { display: none; }
+    @media (max-width: 600px) {
+        .container { margin: 10px auto 0; padding: 14px 4vw; }
+        #flashcard { font-size: 1.3em; padding: 20px 3vw;}
+    }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>🇫🇮 Finnish Flashcards</h2>
+    <div id="theme-select">
+        <label for="theme"><b>Theme:</b></label>
+        <select id="theme">
+            {% for t in themes %}
+                <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn" onclick="startSession()">Start</button>
+    </div>
+    <div id="stats" class="hidden">
+        <div class="progressbar">
+            <div class="progressbar-fill" id="progressbar-fill"></div>
+        </div>
+        <span id="progress"></span>
+        <span id="accuracy" style="margin-left:8px;"></span>
+    </div>
+    <div class="font-controls hidden" id="font-controls">
+        <button class="btn-small" onclick="prevFont()" title="Smaller font">A-</button>
+        <button class="btn-small" onclick="nextFont()" title="Bigger font">A+</button>
+        <button class="btn-small" onclick="restartSession()" title="Restart session">⟳</button>
+        <span style="font-size:0.95em;color:#7e9ec5;opacity:0.87">Space: Flip | ←: No | →: Yes</span>
+    </div>
+    <div id="flashcard" class="hidden" tabindex="0"></div>
+    <div id="answer-btns" class="hidden">
+        <button class="btn" onclick="flipCard()" id="flip-btn">Show Answer (Space)</button><br>
+        <button class="btn" onclick="mark(true)" id="knew-btn">Knew it (→)</button>
+        <button class="btn" onclick="mark(false)" id="didnt-btn">Didn't know (←)</button>
+    </div>
+    <div id="session-end" class="hidden"></div>
+</div>
+<script>
+let showingAnswer = false;
+let fontSize = 2.1;
+let currentCard = null;
+let progress = 0, total = 0, correct = 0, wrong = 0;
+
+function startSession() {
+    let theme = document.getElementById("theme").value;
+    fetch('/start_session', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({theme})
+    })
+    .then(res=>res.json())
+    .then(data => {
+        document.getElementById('theme-select').classList.add('hidden');
+        document.getElementById('font-controls').classList.remove('hidden');
+        document.getElementById('stats').classList.remove('hidden');
+        progress = 0; correct = 0; wrong = 0; total = data.total;
+        updateStats(0, total, 0, 0);
+        nextCard();
+    });
+}
+
+function nextCard() {
+    showingAnswer = false;
+    fetch('/get_card')
+    .then(res=>res.json())
+    .then(data => {
+        if(data.end) {
+            document.getElementById('flashcard').classList.add('hidden');
+            document.getElementById('answer-btns').classList.add('hidden');
+            document.getElementById('session-end').classList.remove('hidden');
+            document.getElementById('font-controls').classList.add('hidden');
+            let acc = (data.correct / data.total * 100).toFixed(0);
+            document.getElementById('session-end').innerHTML =
+                `<h3>🎉 Session Complete!</h3>
+                 <p><b>Correct:</b> ${data.correct} / ${data.total}</p>
+                 <p><b>Accuracy:</b> ${acc}%</p>
+                 <button class="btn" onclick="restartSession()">Start Over</button>`;
+            return;
+        }
+        currentCard = data;
+        progress = data.progress; total = data.total;
+        document.getElementById('flashcard').innerHTML = data.fi;
+        document.getElementById('flashcard').classList.remove('hidden', 'flipped');
+        document.getElementById('answer-btns').classList.remove('hidden');
+        updateStats(data.progress, data.total, data.correct, data.wrong);
+        setFont();
+        document.getElementById('flashcard').focus();
+    });
+}
+
+function flipCard() {
+    if(!currentCard) return;
+    let el = document.getElementById('flashcard');
+    if(showingAnswer) {
+        el.innerHTML = currentCard.fi;
+        el.classList.remove('flipped');
+    } else {
+        el.innerHTML = `<div><b>${currentCard.fi}</b><div class="answer-phrase">${currentCard.en}</div></div>`;
+        el.classList.add('flipped');
+    }
+    showingAnswer = !showingAnswer;
+}
+
+function mark(knew) {
+    fetch('/mark', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({knew})
+    })
+    .then(res=>res.json())
+    .then(data => {
+        correct = data.correct; wrong = data.wrong;
+        updateStats(data.progress, data.total, data.correct, data.wrong);
+        nextCard();
+    });
+}
+
+function restartSession() {
+    fetch('/restart').then(()=>window.location.reload());
+}
+
+function updateStats(progress, total, correct=0, wrong=0) {
+    let acc = correct + wrong > 0 ? `Accuracy: <b>${(correct/(correct+wrong)*100).toFixed(0)}%</b>` : '';
+    document.getElementById('progress').innerHTML = `<b>Progress:</b> ${progress}/${total}`;
+    document.getElementById('accuracy').innerHTML = acc;
+    // Progress bar update
+    let percent = total ? (progress/total*100) : 0;
+    document.getElementById('progressbar-fill').style.width = percent + "%";
+}
+
+function setFont() {
+    document.getElementById('flashcard').style.fontSize = fontSize + "em";
+}
+function prevFont() {
+    fontSize = Math.max(1.1, fontSize-0.18); setFont();
+}
+function nextFont() {
+    fontSize = Math.min(4.5, fontSize+0.18); setFont();
+}
+
+// Flip on click
+document.getElementById('flashcard').addEventListener('click', flipCard);
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e){
+    if(document.getElementById('flashcard').classList.contains('hidden')) return;
+    if(e.code == "Space") { e.preventDefault(); flipCard(); }
+    if(e.code == "ArrowRight") { mark(true); }
+    if(e.code == "ArrowLeft") { mark(false); }
+});
+
+</script>
+</body>
+</html>
