@@ -7,7 +7,7 @@ An interactive web app for learning Finnish vocabulary and everyday phrases. Stu
 ## Features
 
 - **Extensive Flashcard Library:**  
-  400+ cards with Finnish-English vocabulary and phrases organized by themes (e.g., Weather, Food, Home, Travel, Work, etc.)
+  3000+ cards with Finnish-English vocabulary and phrases organized by themes (e.g., Weather, Food, Home, Travel, Work, etc.)
 
 - **Theme Selection:**  
   Study what matters to you by picking a theme.
