@@ -70,8 +70,12 @@ Open http://localhost:5000 in your browser.
 
 On your smartphone:
 -Ensure your computer and phone are on the same Wi-Fi network.
+
 -Find your computer's local IP address (e.g., 192.168.1.100).
+
 -Run Flask with host='0.0.0.0' in app.py (or python app.py --host=0.0.0.0 if supported).
+
 -Open http://<your-ip>:5000 in your mobile browser.
 
-Hyvää opiskelua!
+
+### Hyvää opiskelua!
