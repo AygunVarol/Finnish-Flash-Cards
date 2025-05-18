@@ -37,8 +37,8 @@ An interactive web app for learning Finnish vocabulary and everyday phrases. Stu
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-username/finnish-flashcards-app.git
-cd finnish-flashcards-app
+git clone https://github.com/AygunVarol/finnish-flash-cards.git
+cd finnish-flash-cards
 ```
 
 ### 2. Install dependencies
